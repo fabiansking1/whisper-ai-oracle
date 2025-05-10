@@ -5,11 +5,14 @@ interface ChatRequestOptions {
 }
 
 interface ChatResponse {
-  choices: {
+  choices?: {
     message: {
       content: string;
     };
   }[];
+  error?: {
+    message: string;
+  };
 }
 
 const API_KEY = "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";
@@ -30,13 +33,19 @@ export const chatCompletions = async (options: ChatRequestOptions): Promise<stri
       })
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("API Error:", errorData);
-      throw new Error(errorData.error?.message || "Failed to get response from AI");
-    }
-
     const data: ChatResponse = await response.json();
+    
+    // Si la API devuelve un error específico
+    if (!response.ok) {
+      console.error("API Error:", data);
+      throw new Error(data.error?.message || "Failed to get response from AI");
+    }
+    
+    // Verificar que choices exista y tenga al menos un elemento
+    if (!data.choices || data.choices.length === 0) {
+      throw new Error("No response data received from AI");
+    }
+    
     return data.choices[0].message.content;
   } catch (error) {
     console.error("Chat completion error:", error);

@@ -59,11 +59,20 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = false }
       let fullText = '';
       const totalPages = pdfDocument.numPages;
       
-      for (let i = 1; i <= totalPages; i++) {
+      // Limitar el número de páginas para procesar si el documento es muy grande
+      const maxPagesToProcess = Math.min(totalPages, 10);
+      
+      for (let i = 1; i <= maxPagesToProcess; i++) {
         const page = await pdfDocument.getPage(i);
         const textContent = await page.getTextContent();
         const pageText = textContent.items.map((item: any) => item.str).join(' ');
         fullText += pageText + '\n';
+        
+        // Limitar el texto extraído para evitar exceder el contexto del modelo
+        if (fullText.length > 8000) {
+          fullText = fullText.substring(0, 8000) + "\n[Contenido truncado debido al límite de tamaño]";
+          break;
+        }
       }
       
       // Get document info
@@ -73,12 +82,17 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = false }
       const jsonData = {
         filename: file.name,
         pageCount: totalPages,
+        processedPages: maxPagesToProcess,
         text: fullText,
         info: info.info || {}
       };
 
       // Send the PDF data as a message
-      const message = `Análisis del PDF "${file.name}" (${totalPages} páginas)`;
+      let message = `Análisis del PDF "${file.name}" (${totalPages} páginas)`;
+      if (maxPagesToProcess < totalPages) {
+        message += ` - Solo se procesaron las primeras ${maxPagesToProcess} páginas debido al tamaño del documento.`;
+      }
+      
       onSendMessage(message, jsonData);
       
       toast.success(`PDF "${file.name}" analizado correctamente`);
