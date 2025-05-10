@@ -44,22 +44,41 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = false }
       // Read the file as ArrayBuffer
       const arrayBuffer = await file.arrayBuffer();
       
-      // Import pdf-parse dynamically
-      const pdfParse = (await import('pdf-parse')).default;
+      // Use PDF.js for browser-compatible PDF parsing
+      const pdf = await import('pdfjs-dist');
       
-      // Parse PDF content
-      const pdfData = await pdfParse(new Uint8Array(arrayBuffer));
+      // Set the worker source
+      const pdfjsWorker = await import('pdfjs-dist/build/pdf.worker.entry');
+      pdf.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+      
+      // Load and parse the document
+      const loadingTask = pdf.getDocument(new Uint8Array(arrayBuffer));
+      const pdfDocument = await loadingTask.promise;
+      
+      // Extract text from all pages
+      let fullText = '';
+      const totalPages = pdfDocument.numPages;
+      
+      for (let i = 1; i <= totalPages; i++) {
+        const page = await pdfDocument.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map((item: any) => item.str).join(' ');
+        fullText += pageText + '\n';
+      }
+      
+      // Get document info
+      const info = await pdfDocument.getMetadata();
       
       // Create JSON with extracted data
       const jsonData = {
         filename: file.name,
-        pageCount: pdfData.numpages,
-        text: pdfData.text,
-        info: pdfData.info
+        pageCount: totalPages,
+        text: fullText,
+        info: info.info || {}
       };
 
       // Send the PDF data as a message
-      const message = `Análisis del PDF "${file.name}" (${pdfData.numpages} páginas)`;
+      const message = `Análisis del PDF "${file.name}" (${totalPages} páginas)`;
       onSendMessage(message, jsonData);
       
       toast.success(`PDF "${file.name}" analizado correctamente`);
