@@ -6,6 +6,7 @@ export interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  jsonData?: any;
 }
 
 interface ChatMessageProps {
@@ -31,6 +32,19 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
       </div>
       <div className="prose prose-sm">
         {message.content}
+        
+        {message.jsonData && (
+          <div className="mt-2">
+            <details>
+              <summary className="cursor-pointer font-medium text-sm">
+                Ver datos extraídos del PDF
+              </summary>
+              <pre className="bg-muted p-2 rounded-md mt-2 text-xs overflow-auto max-h-[300px]">
+                {JSON.stringify(message.jsonData, null, 2)}
+              </pre>
+            </details>
+          </div>
+        )}
       </div>
     </div>
   );

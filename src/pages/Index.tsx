@@ -10,23 +10,37 @@ const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const handleSendMessage = useCallback(async (content: string) => {
-    if (!content.trim()) return;
+  const handleSendMessage = useCallback(async (content: string, jsonData?: any) => {
+    if (!content.trim() && !jsonData) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content
+      content,
+      jsonData
     };
 
     setMessages(prev => [...prev, userMessage]);
     setLoading(true);
 
     try {
+      // Prepare the message content for the API
+      let apiContent = content;
+      
+      // If we have JSON data, include it in the message
+      if (jsonData) {
+        apiContent = `${content}\n\nDatos extraídos del PDF:\n${JSON.stringify(jsonData, null, 2)}`;
+      }
+
       // Prepare messages for the API
       const apiMessages = [
-        ...messages.map(msg => ({ role: msg.role, content: msg.content })),
-        { role: 'user', content }
+        ...messages.map(msg => ({ 
+          role: msg.role, 
+          content: msg.jsonData 
+            ? `${msg.content}\n\nDatos extraídos del PDF:\n${JSON.stringify(msg.jsonData, null, 2)}`
+            : msg.content 
+        })),
+        { role: 'user', content: apiContent }
       ];
 
       const response = await chatCompletions({
@@ -43,7 +57,7 @@ const Index = () => {
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error getting AI response:', error);
-      toast.error('Failed to get AI response. Please try again.');
+      toast.error('No se pudo obtener respuesta de la IA. Por favor intenta de nuevo.');
     } finally {
       setLoading(false);
     }

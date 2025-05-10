@@ -29,9 +29,9 @@ const ChatContainer: React.FC<ChatContainerProps> = ({ messages, loading }) => {
       {messages.length === 0 && (
         <div className="flex items-center justify-center h-full">
           <div className="text-center p-8 max-w-md">
-            <h2 className="text-2xl font-bold mb-4">Welcome to AIChat</h2>
+            <h2 className="text-2xl font-bold mb-4">Bienvenido a AIChat</h2>
             <p className="text-muted-foreground mb-6">
-              Chat with an advanced AI assistant powered by OpenRouter. Start by sending a message below.
+              Chatea con un asistente IA avanzado. Envía un mensaje o sube un archivo PDF para analizarlo.
             </p>
           </div>
         </div>
